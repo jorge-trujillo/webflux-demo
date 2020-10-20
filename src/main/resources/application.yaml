@@ -1,0 +1,11 @@
+
+spring:
+  data:
+    mongodb:
+      database: kotlin-graphql
+      port: 27017
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+server:
+  port: 8080

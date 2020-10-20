@@ -1,0 +1,232 @@
+import static org.apache.tools.ant.taskdefs.condition.Os.FAMILY_MAC
+import static org.apache.tools.ant.taskdefs.condition.Os.isFamily
+
+buildscript {
+  ext {
+    defaultArgs = [
+        'spring.profiles.active': 'test',
+        'mock_server.host'      : 'localhost'
+    ]
+
+    groovyVersion = '3.0.5'
+    kotlinVersion = '1.4.0'
+    kotlinCoroutinesVersion = '1.3.9'
+    kotlinReflectVersion = '1.4.0'
+    ktlintVersion = '0.38.1'
+
+    jacksonVersion = '2.10.1'
+    // Spring dependencies
+    springBootVersion = '2.3.2.RELEASE'
+
+    // test dependencies
+    dockerComposeVersion = '0.10.6'
+    dockerPath = '/usr/local/bin'
+
+    cglibVersion = '3.2.4'
+    objenesisVersion = '2.4'
+    spockVersion = '1.2-groovy-2.5'
+    mockServerVersion = '5.2.3'
+  }
+
+  repositories {
+    mavenLocal()
+    jcenter()
+    mavenCentral()
+    maven { url "https://plugins.gradle.org/m2/" }
+  }
+
+  dependencies {
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}"
+    classpath "org.jetbrains.kotlin:kotlin-allopen:${kotlinVersion}"
+
+    // See https://kotlinlang.org/docs/reference/compiler-plugins.html#spring-support
+    classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    classpath "gradle.plugin.com.avast.gradle:gradle-docker-compose-plugin:${dockerComposeVersion}"
+  }
+}
+
+apply plugin: 'idea'
+apply plugin: 'kotlin'
+apply plugin: 'groovy'
+apply plugin: 'kotlin-spring'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'com.avast.gradle.docker-compose'
+
+version = '0.2.0'
+
+jar {
+  archiveBaseName = 'webflux-demo'
+  archiveVersion = '0.2.0'
+}
+
+repositories {
+  mavenLocal()
+  jcenter()
+  mavenCentral()
+  maven { url "https://plugins.gradle.org/m2/" }
+}
+
+configurations {
+  ktlint
+}
+
+dependencies {
+  ktlint "com.pinterest:ktlint:${ktlintVersion}"
+
+  compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}" // Required for Kotlin integration
+  compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}"
+  compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${kotlinCoroutinesVersion}"
+
+  compile "org.jetbrains.kotlin:kotlin-reflect:${kotlinReflectVersion}"
+  compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
+
+  // Spring
+  //compile "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
+  compile "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
+  compile "org.springframework.boot:spring-boot-starter-webflux:${springBootVersion}"
+  compile "org.springframework.boot:spring-boot-starter-data-mongodb-reactive:${springBootVersion}"
+  //compile "org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}"
+  compile "org.codehaus.groovy:groovy-all:${groovyVersion}"
+
+  // Test dependencies
+  testCompile "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+  testCompile "cglib:cglib-nodep:${cglibVersion}"
+  testCompile "org.objenesis:objenesis:${objenesisVersion}"
+  testCompile "org.spockframework:spock-core:${spockVersion}"
+  testCompile "org.spockframework:spock-spring:${spockVersion}"
+  testCompile "org.mock-server:mockserver-netty:${mockServerVersion}"
+
+  compile "org.apache.httpcomponents:httpclient:4.5.13"
+  compile "com.squareup.okhttp3:okhttp:4.2.2"
+  // Feign for testing
+  testCompile group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '2.1.3.RELEASE'
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+  kotlinOptions {
+    jvmTarget = "11"
+  }
+}
+
+configurations {
+  functionalTestCompile.extendsFrom testCompile
+  functionalTestRuntime.extendsFrom testRuntime
+}
+
+sourceSets {
+  functionalTest {
+    groovy {
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+      srcDir file('src/functionalTest/groovy')
+    }
+  }
+}
+
+springBoot {
+  buildInfo()
+}
+
+task ktlint(type: JavaExec, group: "verification") {
+  description = "Check Kotlin code style."
+  main = "com.pinterest.ktlint.Main"
+  classpath = configurations.ktlint
+  args "--verbose", "--reporter=json", "src/**/*.kt"
+  // to generate report in checkstyle format prepend following args:
+  // "--reporter=plain", "--reporter=checkstyle,output=${buildDir}/ktlint.xml"
+  // see https://github.com/pinterest/ktlint#usage for more
+}
+
+task ktlintFormat(type: JavaExec, group: "formatting") {
+  description = "Fix Kotlin code style deviations."
+  main = "com.pinterest.ktlint.Main"
+  classpath = configurations.ktlint
+  args "-F", "src/**/*.kt"
+}
+
+task functionalTest(type: Test) {
+
+  defaultArgs.each { String name, String value ->
+    String argValue = "-D${name}=${System.properties[name] ?: value}"
+    project.logger.lifecycle("Setting ${name} -> ${argValue}")
+    if (jvmArgs) {
+      jvmArgs.add(argValue)
+    } else {
+      jvmArgs = [argValue]
+    }
+  }
+
+  testClassesDirs = sourceSets.functionalTest.output.classesDirs
+  classpath = sourceSets.functionalTest.runtimeClasspath
+  outputs.upToDateWhen { false }
+}
+
+// Task for those switching between a Mac and a Linux PC
+task unix {
+  // Add condition to check operating system.
+  if (isFamily(FAMILY_MAC)) {
+    dockerPath = '/usr/local/bin'
+  } else {
+    dockerPath = '/usr/bin'
+  }
+  println "Setting docker base path to ${dockerPath}"
+}
+composeUp.dependsOn(unix)
+composeDown.dependsOn(unix)
+composePull.dependsOn(unix)
+
+dockerCompose.isRequiredBy(functionalTest)
+dockerCompose.isRequiredBy(bootRun)
+dockerCompose {
+  useComposeFiles = [rootProject.file('src/test/resources/compose/compose-test.yml').absolutePath]
+  executable = "${dockerPath}/docker-compose"
+  dockerExecutable = "${dockerPath}/docker"
+}
+
+// Run ktlint
+check.dependsOn ktlint
+functionalTest.mustRunAfter(ktlint)
+
+// Always run functional tests on build
+check.dependsOn functionalTest
+
+test {
+  testLogging {
+    // set options for log level LIFECYCLE
+    events "failed"
+    exceptionFormat "full"
+    showCauses = true
+    showExceptions = true
+
+    // set options for log level DEBUG
+    debug {
+      events "started", "skipped", "failed"
+      exceptionFormat "full"
+    }
+
+    // remove standard output/error logging from --info builds
+    // by assigning only 'failed' and 'skipped' events
+    info.events = ["failed", "skipped"]
+  }
+}
+
+functionalTest {
+  testLogging {
+    // set options for log level LIFECYCLE
+    events "failed"
+    exceptionFormat "full"
+    showCauses = true
+    showExceptions = true
+
+    // set options for log level DEBUG
+    debug {
+      events "started", "skipped", "failed"
+      exceptionFormat "full"
+    }
+
+    // remove standard output/error logging from --info builds
+    // by assigning only 'failed' and 'skipped' events
+    info.events = ["failed", "skipped"]
+  }
+}
