@@ -1,0 +1,9 @@
+
+feign:
+  app:
+    url: http://localhost:8080
+
+tests:
+  mock_server:
+    host: http://localhost
+    port: 1080
