@@ -4,28 +4,29 @@ import static org.apache.tools.ant.taskdefs.condition.Os.isFamily
 buildscript {
   ext {
     defaultArgs = [
-        'spring.profiles.active': 'test',
-        'mock_server.host'      : 'localhost'
+        'spring.profiles.active': 'test'
     ]
 
-    groovyVersion = '3.0.5'
-    kotlinVersion = '1.4.0'
-    kotlinCoroutinesVersion = '1.3.9'
-    kotlinReflectVersion = '1.4.0'
+    kotlinVersion = '1.4.20'
+    kotlinCoroutinesVersion = '1.4.1'
+    kotlinReflectVersion = '1.4.20'
     ktlintVersion = '0.38.1'
 
     jacksonVersion = '2.10.1'
+    okHttpVersion = '4.2.2'
+
     // Spring dependencies
     springBootVersion = '2.3.2.RELEASE'
 
-    // test dependencies
+    // Test dependencies
+    kotestVersion = '4.3.0'
+    junitVersion = '5.6.3'
+    mockkVersion = '1.10.2'
+    feignVersion = '2.2.6.RELEASE'
+    mockServerVersion = '5.11.2'
+
     dockerComposeVersion = '0.10.6'
     dockerPath = '/usr/local/bin'
-
-    cglibVersion = '3.2.4'
-    objenesisVersion = '2.4'
-    spockVersion = '1.2-groovy-2.5'
-    mockServerVersion = '5.2.3'
   }
 
   repositories {
@@ -47,17 +48,15 @@ buildscript {
 
 apply plugin: 'idea'
 apply plugin: 'kotlin'
-apply plugin: 'groovy'
 apply plugin: 'kotlin-spring'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.avast.gradle.docker-compose'
 
-version = '0.2.0'
+version = '0.3.0'
 
 jar {
-  archiveBaseName = 'webflux-demo'
-  archiveVersion = '0.2.0'
+  archiveFileName = 'webflux-demo'
 }
 
 repositories {
@@ -74,33 +73,33 @@ configurations {
 dependencies {
   ktlint "com.pinterest:ktlint:${ktlintVersion}"
 
+  // Kotlin dependencies
   compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}" // Required for Kotlin integration
   compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}"
   compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${kotlinCoroutinesVersion}"
+  compile "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${kotlinCoroutinesVersion}"
 
   compile "org.jetbrains.kotlin:kotlin-reflect:${kotlinReflectVersion}"
   compile "com.fasterxml.jackson.module:jackson-module-kotlin:${jacksonVersion}"
 
+  // Http
+  compile "com.squareup.okhttp3:okhttp:${okHttpVersion}"
+
   // Spring
-  //compile "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
   compile "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
   compile "org.springframework.boot:spring-boot-starter-webflux:${springBootVersion}"
-  compile "org.springframework.boot:spring-boot-starter-data-mongodb-reactive:${springBootVersion}"
-  //compile "org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}"
-  compile "org.codehaus.groovy:groovy-all:${groovyVersion}"
+  compile "org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}"
+  compile "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
 
   // Test dependencies
   testCompile "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
-  testCompile "cglib:cglib-nodep:${cglibVersion}"
-  testCompile "org.objenesis:objenesis:${objenesisVersion}"
-  testCompile "org.spockframework:spock-core:${spockVersion}"
-  testCompile "org.spockframework:spock-spring:${spockVersion}"
+  testCompile "io.kotest:kotest-assertions-core:${kotestVersion}"
+  testCompile "org.junit.jupiter:junit-jupiter:${junitVersion}"
+  testCompile "io.mockk:mockk:${mockkVersion}"
   testCompile "org.mock-server:mockserver-netty:${mockServerVersion}"
 
-  compile "org.apache.httpcomponents:httpclient:4.5.13"
-  compile "com.squareup.okhttp3:okhttp:4.2.2"
   // Feign for testing
-  testCompile group: 'org.springframework.cloud', name: 'spring-cloud-starter-openfeign', version: '2.1.3.RELEASE'
+  testCompile "org.springframework.cloud:spring-cloud-starter-openfeign:${feignVersion}"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -114,12 +113,15 @@ configurations {
   functionalTestRuntime.extendsFrom testRuntime
 }
 
+// Necessary for Kotest tests to run
+tasks.withType(Test) { useJUnitPlatform() }
+
 sourceSets {
   functionalTest {
-    groovy {
+    kotlin {
       compileClasspath += main.output + test.output
       runtimeClasspath += main.output + test.output
-      srcDir file('src/functionalTest/groovy')
+      srcDir file('src/functionalTest/kotlin')
     }
   }
 }

@@ -2,8 +2,8 @@
 spring:
   data:
     mongodb:
-      database: kotlin-graphql
-      port: 27017
+      uri: mongodb://localhost:27017/webflux-demo
+
   jackson:
     property-naming-strategy: SNAKE_CASE
 

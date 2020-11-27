@@ -1,11 +1,5 @@
-# this file wi
-version: '2'
+version: '3'
 services:
-  mock-server-test:
-    image: jamesdbloom/mockserver:mockserver-5.2.3
-    container_name: mock-server-test
-    ports:
-      - "1080:1080"
   mongo-test:
     image: mongo:4
     container_name: mongo-test
