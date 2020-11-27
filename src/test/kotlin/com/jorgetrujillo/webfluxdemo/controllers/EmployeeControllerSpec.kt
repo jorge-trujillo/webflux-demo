@@ -27,7 +27,7 @@ internal class EmployeeControllerSpec {
     val expected = Employee("Joe", "e1")
 
     coEvery {
-      controller.service.getByEmployeeId(id)
+      controller.service.getById(id)
     } returns expected
 
     // when:
@@ -35,7 +35,7 @@ internal class EmployeeControllerSpec {
 
     // then:
     coVerifyAll {
-      controller.service.getByEmployeeId(id)
+      controller.service.getById(id)
     }
 
     actual shouldBe expected

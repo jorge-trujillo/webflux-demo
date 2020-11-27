@@ -197,7 +197,7 @@ internal class EmployeeServiceSpec {
     } just Runs
 
     // when:
-    val actual = runBlocking { service.delete(id) }
+    runBlocking { service.delete(id) }
 
     // then:
     coVerifyAll {
@@ -205,4 +205,3 @@ internal class EmployeeServiceSpec {
     }
   }
 }
-

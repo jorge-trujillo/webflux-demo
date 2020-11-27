@@ -120,7 +120,6 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     val existingEmployee = repository.save(
       TestUtils.getTestEmployee("Joe", "e1")
     )
-    val employeeUpdate = EmployeeUpdate("Pete", "e1")
 
     // when:
     val response = webClient.deleteEmployee(existingEmployee.id!!)
