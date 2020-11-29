@@ -1,5 +1,7 @@
 package com.jorgetrujillo.webfluxdemo.services
 
+import com.jorgetrujillo.webfluxdemo.clients.SocialSecurityServiceClient
+import com.jorgetrujillo.webfluxdemo.clients.domain.SocialSecurityInfo
 import com.jorgetrujillo.webfluxdemo.domain.Employee
 import com.jorgetrujillo.webfluxdemo.domain.EmployeeUpdate
 import com.jorgetrujillo.webfluxdemo.exceptions.ResourceConflictException
@@ -23,7 +25,10 @@ import java.util.Optional
 
 internal class EmployeeServiceSpec {
 
-  val service = EmployeeService(mockk<EmployeeRepository>())
+  val service = EmployeeService(
+    mockk<EmployeeRepository>(),
+    mockk<SocialSecurityServiceClient>()
+  )
 
   @BeforeEach
   fun setup() {
@@ -146,6 +151,7 @@ internal class EmployeeServiceSpec {
   fun `list employees`() {
     // given:
     val name = "Joe"
+    val socialSecurityInfo = SocialSecurityInfo("1234", true)
     val expected = listOf(getTestEmployee("Joe", "e1"))
     val pageable = PageRequest.of(0, 20)
 
@@ -153,6 +159,10 @@ internal class EmployeeServiceSpec {
     coEvery {
       service.employeeRepository.listByFields(name, pageable)
     } returns PageImpl(expected)
+    // Mocked call to external service
+    coEvery {
+      service.ssnClient.getSocialSecurity("e1")
+    } returns socialSecurityInfo
 
     // when:
     val actual = runBlocking { service.list(name, pageable) }
@@ -160,30 +170,42 @@ internal class EmployeeServiceSpec {
     // then:
     coVerifyAll {
       service.employeeRepository.listByFields(name, pageable)
+      service.ssnClient.getSocialSecurity("e1")
     }
 
-    actual.content shouldBe expected
+    actual.content[0].name shouldBe expected[0].name
+    actual.content[0].employeeId shouldBe expected[0].employeeId
+    actual.content[0].socialSecurityNumber shouldBe socialSecurityInfo.socialSecurityNumber
+
   }
 
   @Test
   fun `get one employee by id`() {
     // given:
-    val employeeId = "e1"
+    val id = "id1"
     val expected = getTestEmployee("Joe", "e1")
+    val socialSecurityInfo = SocialSecurityInfo("1234", true)
 
     // list call to repo
     coEvery {
-      service.employeeRepository.findOneByEmployeeId(employeeId)
-    } returns expected
+      service.employeeRepository.findById(id)
+    } returns Optional.of(expected)
+    coEvery {
+      service.ssnClient.getSocialSecurity("e1")
+    } returns socialSecurityInfo
 
     // when:
-    val actual = runBlocking { service.getByEmployeeId(employeeId) }
+    val actual = runBlocking { service.getById(id) }
 
     // then:
     coVerifyAll {
-      service.employeeRepository.findOneByEmployeeId(employeeId)
+      service.employeeRepository.findById(id)
+      service.ssnClient.getSocialSecurity("e1")
     }
-    actual shouldBe expected
+
+    actual?.name shouldBe expected.name
+    actual?.employeeId shouldBe expected.employeeId
+    actual?.socialSecurityNumber shouldBe socialSecurityInfo.socialSecurityNumber
   }
 
   @Test
