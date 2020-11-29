@@ -188,7 +188,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     repository.findById(existingEmployee.id!!).orElse(null) shouldBe null
   }
 
-  private fun getSsnBody(ssn: String) : String {
+  private fun getSsnBody(ssn: String): String {
     return """
       {
         "social_security_number": "{SSN}",

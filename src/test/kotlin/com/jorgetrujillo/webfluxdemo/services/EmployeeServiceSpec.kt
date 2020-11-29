@@ -176,7 +176,6 @@ internal class EmployeeServiceSpec {
     actual.content[0].name shouldBe expected[0].name
     actual.content[0].employeeId shouldBe expected[0].employeeId
     actual.content[0].socialSecurityNumber shouldBe socialSecurityInfo.socialSecurityNumber
-
   }
 
   @Test
