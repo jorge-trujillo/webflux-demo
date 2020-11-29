@@ -21,7 +21,7 @@ class WebConfig {
     return InetAddress.getLocalHost().hostName
   }
 
-  @Bean
+  @Bean("primaryMapper")
   @Primary
   fun defaultObjectMapper(): ObjectMapper {
     return ObjectMapper()

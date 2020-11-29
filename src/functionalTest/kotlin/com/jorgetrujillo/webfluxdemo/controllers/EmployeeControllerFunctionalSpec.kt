@@ -10,6 +10,11 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockserver.matchers.Times
+import org.mockserver.model.HttpRequest
+import org.mockserver.model.HttpResponse
+import org.mockserver.model.MediaType
+import org.mockserver.verify.VerificationTimes
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import java.time.Duration
@@ -25,6 +30,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
 
   @BeforeEach
   fun setup() {
+    startMockServer()
     repository.deleteAll()
   }
 
@@ -37,17 +43,35 @@ class EmployeeControllerFunctionalSpec : TestBase() {
   fun `get an employee by id`() {
 
     // given:
+    val ssnNumber = "ssn1"
     val existingEmployee = repository.save(
       TestUtils.getTestEmployee("Joe", "e1")
+    )
+
+    val getSsn1Request = HttpRequest.request()
+      .withMethod("GET")
+      .withPath("/social_security_numbers/e1")
+
+    mockServerClient!!.`when`(
+      getSsn1Request,
+      Times.unlimited()
+    ).respond(
+      HttpResponse.response()
+        .withStatusCode(200)
+        .withContentType(MediaType.TEXT_HTML)
+        .withBody(getSsnBody(ssnNumber))
     )
 
     // when:
     val response = webClient.getEmployee(existingEmployee.id!!)
 
     // then:
+    mockServerClient!!.verify(getSsn1Request, VerificationTimes.atLeast(1))
+
     response.statusCode shouldBe HttpStatus.OK
     response.body?.id shouldBe existingEmployee.id
     response.body?.employeeId shouldBe existingEmployee.employeeId
+    response.body?.socialSecurityNumber shouldBe ssnNumber
     Duration.between(response.body?.created, Instant.now()).toMinutes() shouldBeLessThanOrEqual 1
   }
 
@@ -64,13 +88,46 @@ class EmployeeControllerFunctionalSpec : TestBase() {
       )
     )
 
+    val getSsn1Request = HttpRequest.request()
+      .withMethod("GET")
+      .withPath("/social_security_numbers/e1")
+
+    mockServerClient!!.`when`(
+      getSsn1Request,
+      Times.unlimited()
+    ).respond(
+      HttpResponse.response()
+        .withStatusCode(200)
+        .withContentType(MediaType.TEXT_HTML)
+        .withBody(getSsnBody("1"))
+    )
+
+    val getSsn2Request = HttpRequest.request()
+      .withMethod("GET")
+      .withPath("/social_security_numbers/e2")
+    mockServerClient!!.`when`(
+      getSsn2Request,
+      Times.unlimited()
+    ).respond(
+      HttpResponse.response()
+        .withStatusCode(200)
+        .withContentType(MediaType.TEXT_HTML)
+        .withBody(getSsnBody("2"))
+    )
+
     // when:
     val response = webClient.listEmployees("Test", 0, 10, "name.asc")
 
     // then:
+    mockServerClient!!.verify(getSsn1Request, VerificationTimes.atLeast(1))
+    mockServerClient!!.verify(getSsn1Request, VerificationTimes.atLeast(1))
+
     response.statusCode shouldBe HttpStatus.OK
     response.body?.totalResults shouldBe 2
     response.body?.results?.joinToString(separator = ",") { it.employeeId } shouldBe "e1,e2"
+
+    response.body?.results?.get(0)!!.socialSecurityNumber shouldBe "1"
+    response.body?.results?.get(1)!!.socialSecurityNumber shouldBe "2"
   }
 
   @Test
@@ -129,5 +186,15 @@ class EmployeeControllerFunctionalSpec : TestBase() {
 
     // and: Employee was deleted from repo
     repository.findById(existingEmployee.id!!).orElse(null) shouldBe null
+  }
+
+  private fun getSsnBody(ssn: String): String {
+    return """
+      {
+        "social_security_number": "{SSN}",
+        "is_individual": true
+      }
+    """.trimIndent()
+      .replace("{SSN}", ssn)
   }
 }
