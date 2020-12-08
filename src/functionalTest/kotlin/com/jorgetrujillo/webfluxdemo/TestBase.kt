@@ -1,15 +1,15 @@
 package com.jorgetrujillo.webfluxdemo
 
 import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.integration.ClientAndServer.startClientAndServer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.cloud.openfeign.EnableFeignClients
-import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.context.junit.jupiter.SpringExtension
 
-@RunWith(SpringRunner::class)
+@ExtendWith(SpringExtension::class)
 @SpringBootTest(
   classes = [DemoApplication::class],
   webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT
