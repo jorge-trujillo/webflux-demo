@@ -58,7 +58,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     ).respond(
       HttpResponse.response()
         .withStatusCode(200)
-        .withContentType(MediaType.TEXT_HTML)
+        .withContentType(MediaType.APPLICATION_JSON)
         .withBody(getSsnBody(ssnNumber))
     )
 
