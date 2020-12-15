@@ -44,7 +44,7 @@ class EmployeeController(
   }
 
   @PostMapping
-  @ResponseStatus(code = HttpStatus.CREATED)
+  @ResponseStatus(code = HttpStatus.NO_CONTENT)
   @ResponseBody
   suspend fun createEmployee(@RequestBody employeeUpdate: EmployeeUpdate): Employee {
 
