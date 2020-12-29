@@ -1,9 +1,14 @@
 
-spring:
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/webflux-demo
+# DynamoDB config
+amazon:
+  dynamodb:
+    region: us-east-1
+    endpoint: http://localhost:8000/
+  aws:
+    accesskey: access_key
+    secretkey: secret_key
 
+spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
 

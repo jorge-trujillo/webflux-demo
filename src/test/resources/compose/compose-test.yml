@@ -1,7 +1,8 @@
 version: '3'
 services:
-  mongo-test:
-    image: mongo:4
-    container_name: mongo-test
+  dynamo-db-local:
+    image: amazon/dynamodb-local:1.13.5
+    container_name: dynamo-db-local
     ports:
-      - "27017:27017"
+      - "8000:8000"
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb"]

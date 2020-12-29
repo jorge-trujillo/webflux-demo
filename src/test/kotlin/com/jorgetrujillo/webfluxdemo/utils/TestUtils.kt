@@ -9,20 +9,21 @@ class TestUtils {
     fun getTestEmployee(
       name: String? = null,
       employeeId: String? = null,
+      startDate: Instant? = null,
       includeAuditing: Boolean = false
     ): Employee {
       return if (includeAuditing) {
         Employee(
-          null,
-          name ?: "Joe",
           employeeId ?: "e1",
+          name ?: "Joe",
+          startDate ?: Instant.now(),
           Instant.now(),
           Instant.now()
         )
       } else {
         Employee(
-          name ?: "Joe",
           employeeId ?: "e1",
+          name ?: "Joe"
         )
       }
     }

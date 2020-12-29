@@ -16,6 +16,7 @@ buildscript {
     okHttpVersion = '4.2.2'
 
     // Spring dependencies
+    dynamoDbVersion = '1.11.920'
     springBootVersion = '2.3.2.RELEASE'
 
     // Test dependencies
@@ -53,7 +54,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.avast.gradle.docker-compose'
 
-version = '0.3.0'
+version = '0.4.0'
 
 jar {
   archiveFileName = 'webflux-demo'
@@ -73,6 +74,8 @@ configurations {
 dependencies {
   ktlint "com.pinterest:ktlint:${ktlintVersion}"
 
+  compile "net.logstash.logback:logstash-logback-encoder:6.5"
+  
   // Kotlin dependencies
   compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}" // Required for Kotlin integration
   compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinCoroutinesVersion}"
@@ -88,8 +91,11 @@ dependencies {
   // Spring
   compile "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
   compile "org.springframework.boot:spring-boot-starter-webflux:${springBootVersion}"
-  compile "org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}"
   compile "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
+
+  //compile "org.springframework.data:spring-data:${springVersion}"
+  compile "org.springframework.data:spring-data-commons:${springBootVersion}"
+  compile "com.amazonaws:aws-java-sdk-dynamodb:${dynamoDbVersion}"
 
   // Test dependencies
   testCompile "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
