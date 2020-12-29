@@ -24,13 +24,13 @@ class EmployeeController(
   val service: EmployeeService
 ) {
 
-  @GetMapping("/{id}")
+  @GetMapping("/{employeeId}")
   @ResponseBody
   suspend fun getEmployee(
-    @PathVariable id: String
+    @PathVariable employeeId: String
   ): Employee? {
 
-    return service.getById(id)
+    return service.getById(employeeId)
   }
 
   @GetMapping
@@ -51,22 +51,22 @@ class EmployeeController(
     return service.save(null, employeeUpdate)
   }
 
-  @PutMapping("/{id}")
+  @PutMapping("/{employeeId}")
   @ResponseBody
   suspend fun updateEmployee(
-    @PathVariable id: String,
+    @PathVariable employeeId: String,
     @RequestBody employeeUpdate: EmployeeUpdate
   ): Employee {
 
-    return service.save(id, employeeUpdate)
+    return service.save(employeeId, employeeUpdate)
   }
 
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/{employeeId}")
   @ResponseStatus(code = HttpStatus.NO_CONTENT)
   @ResponseBody
   suspend fun deleteEmployee(
-    @PathVariable id: String,
+    @PathVariable employeeId: String,
   ) {
-    service.delete(id)
+    service.delete(employeeId)
   }
 }

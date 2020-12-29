@@ -18,23 +18,22 @@ class EmployeeService(
   val ssnClient: SocialSecurityServiceClient
 ) {
 
-  suspend fun save(id: String? = null, employeeUpdate: EmployeeUpdate): Employee = coroutineScope {
+  suspend fun save(employeeId: String? = null, employeeUpdate: EmployeeUpdate): Employee = coroutineScope {
 
     val employeeToSave: Employee
 
-    employeeToSave = if (id == null) {
-      if (employeeRepository.findOneByEmployeeId(employeeUpdate.employeeId) != null) {
+    employeeToSave = if (employeeId == null) {
+      if (employeeRepository.findById(employeeUpdate.employeeId) != null) {
         throw ResourceConflictException(employeeUpdate.employeeId)
       }
       Employee(employeeUpdate)
     } else {
-      val existingEmployee = employeeRepository.findById(id).orElse(null)
-        ?: throw ResourceDoesNotExistException(id, "id")
+      val existingEmployee = employeeRepository.findById(employeeId)
+        ?: throw ResourceDoesNotExistException(employeeId, "employeeId")
 
       existingEmployee.copy(
-        id = id,
-        name = employeeUpdate.name,
-        employeeId = employeeUpdate.employeeId
+        employeeId = employeeId,
+        employeeName = employeeUpdate.name
       )
     }
 
@@ -44,22 +43,27 @@ class EmployeeService(
   suspend fun list(name: String, pageable: Pageable): Page<Employee> = coroutineScope {
     val employees = employeeRepository.listByFields(name, pageable)
     employees.content.forEach {
-      launch { it.socialSecurityNumber = ssnClient.getSocialSecurity(it.employeeId)?.socialSecurityNumber }
+      if (it.employeeId != null) {
+        launch { it.socialSecurityNumber = ssnClient.getSocialSecurity(it.employeeId!!)?.socialSecurityNumber }
+      }
     }
 
     employees
   }
 
   suspend fun getById(id: String): Employee? = coroutineScope {
-    val employee = employeeRepository.findById(id).orElse(null)
+    val employee = employeeRepository.findById(id)
     employee?.let {
-      it.socialSecurityNumber = ssnClient.getSocialSecurity(it.employeeId)?.socialSecurityNumber
+      if (it.employeeId != null) {
+        it.socialSecurityNumber = ssnClient.getSocialSecurity(it.employeeId!!)?.socialSecurityNumber
+      }
     }
 
     employee
   }
 
   suspend fun delete(id: String) {
-    employeeRepository.deleteById(id)
+    val employee = employeeRepository.findById(id)
+    employee?.let { employeeRepository.delete(employee) }
   }
 }

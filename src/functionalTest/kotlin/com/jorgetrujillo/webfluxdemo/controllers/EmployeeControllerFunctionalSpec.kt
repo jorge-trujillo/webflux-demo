@@ -7,6 +7,7 @@ import com.jorgetrujillo.webfluxdemo.testclients.EmployeeClient
 import com.jorgetrujillo.webfluxdemo.utils.TestUtils
 import io.kotest.matchers.longs.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -63,13 +64,12 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     )
 
     // when:
-    val response = webClient.getEmployee(existingEmployee.id!!)
+    val response = webClient.getEmployee(existingEmployee.employeeId!!)
 
     // then:
     mockServerClient!!.verify(getSsn1Request, VerificationTimes.atLeast(1))
 
     response.statusCode shouldBe HttpStatus.OK
-    response.body?.id shouldBe existingEmployee.id
     response.body?.employeeId shouldBe existingEmployee.employeeId
     response.body?.socialSecurityNumber shouldBe ssnNumber
     Duration.between(response.body?.created, Instant.now()).toMinutes() shouldBeLessThanOrEqual 1
@@ -116,7 +116,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     )
 
     // when:
-    val response = webClient.listEmployees("Test", 0, 10, "name.asc")
+    val response = webClient.listEmployees("Test*", 0, 10, "employeeId.asc")
 
     // then:
     mockServerClient!!.verify(getSsn1Request, VerificationTimes.atLeast(1))
@@ -124,7 +124,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
 
     response.statusCode shouldBe HttpStatus.OK
     response.body?.totalResults shouldBe 2
-    response.body?.results?.joinToString(separator = ",") { it.employeeId } shouldBe "e1,e2"
+    response.body?.results?.joinToString(separator = ",") { it.employeeId!! } shouldBe "e1,e2"
 
     response.body?.results?.get(0)!!.socialSecurityNumber shouldBe "1"
     response.body?.results?.get(1)!!.socialSecurityNumber shouldBe "2"
@@ -144,8 +144,8 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     response.body?.employeeId shouldBe employeeUpdate.employeeId
 
     // and: Employee was saved to repo
-    val savedEmployee = repository.findById(response.body?.id!!).orElse(null)
-    savedEmployee.employeeId shouldBe employeeUpdate.employeeId
+    val savedEmployee = runBlocking { repository.findById(response.body?.employeeId!!) }
+    savedEmployee?.employeeId shouldBe employeeUpdate.employeeId
   }
 
   @Test
@@ -158,16 +158,16 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     val employeeUpdate = EmployeeUpdate("Pete", "e1")
 
     // when:
-    val response = webClient.updateEmployee(existingEmployee.id!!, employeeUpdate)
+    val response = webClient.updateEmployee(existingEmployee.employeeId!!, employeeUpdate)
 
     // then:
     response.statusCode shouldBe HttpStatus.OK
     response.body?.employeeId shouldBe employeeUpdate.employeeId
-    response.body?.name shouldBe employeeUpdate.name
+    response.body?.employeeName shouldBe employeeUpdate.name
 
     // and: Employee was saved to repo
-    val savedEmployee = repository.findById(response.body?.id!!).orElse(null)
-    savedEmployee.name shouldBe employeeUpdate.name
+    val savedEmployee = runBlocking { repository.findById(response.body?.employeeId!!) }
+    savedEmployee?.employeeName shouldBe employeeUpdate.name
   }
 
   @Test
@@ -179,13 +179,13 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     )
 
     // when:
-    val response = webClient.deleteEmployee(existingEmployee.id!!)
+    val response = webClient.deleteEmployee(existingEmployee.employeeId!!)
 
     // then:
     response.statusCode shouldBe HttpStatus.NO_CONTENT
 
     // and: Employee was deleted from repo
-    repository.findById(existingEmployee.id!!).orElse(null) shouldBe null
+    runBlocking { repository.findById(existingEmployee.employeeId!!) } shouldBe null
   }
 
   private fun getSsnBody(ssn: String): String {

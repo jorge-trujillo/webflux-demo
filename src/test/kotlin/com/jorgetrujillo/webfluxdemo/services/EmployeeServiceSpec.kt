@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
-import java.util.Optional
+import java.time.Instant
 
 internal class EmployeeServiceSpec {
 
@@ -47,7 +47,7 @@ internal class EmployeeServiceSpec {
 
     // Call to get existing employee by ID
     coEvery {
-      service.employeeRepository.findOneByEmployeeId("e1")
+      service.employeeRepository.findById("e1")
     } returns null
     // Save call to repo
     coEvery {
@@ -59,10 +59,10 @@ internal class EmployeeServiceSpec {
 
     // then:
     coVerifyAll {
-      service.employeeRepository.findOneByEmployeeId("e1")
+      service.employeeRepository.findById("e1")
       service.employeeRepository.save(
         withArg { employee: Employee ->
-          employee.name shouldBe employeeUpdate.name
+          employee.employeeName shouldBe employeeUpdate.name
           employee.employeeId shouldBe employeeUpdate.employeeId
           employee.created shouldBe null
         }
@@ -84,7 +84,7 @@ internal class EmployeeServiceSpec {
     // Describe what mocks do when called
     // Call to get existing employee by ID
     coEvery {
-      service.employeeRepository.findOneByEmployeeId("e1")
+      service.employeeRepository.findById("e1")
     } returns existingEmployee
 
     // when:
@@ -94,7 +94,7 @@ internal class EmployeeServiceSpec {
 
     // then:
     coVerifyAll {
-      service.employeeRepository.findOneByEmployeeId("e1")
+      service.employeeRepository.findById("e1")
     }
 
     exception.shouldBeTypeOf<ResourceConflictException>()
@@ -103,15 +103,16 @@ internal class EmployeeServiceSpec {
   @Test
   fun `save an existing employee`() {
     // given:
-    val existingId = "id1"
-    val employeeUpdate = EmployeeUpdate(
-      "Joe",
-      "e1"
-    )
+    val existingId = "e1"
     val existing = getTestEmployee(
       "Pete",
       "e1",
+      Instant.now(),
       true
+    )
+    val employeeUpdate = EmployeeUpdate(
+      "Joe",
+      "e1"
     )
     val expected = getTestEmployee(
       "Joe",
@@ -123,7 +124,7 @@ internal class EmployeeServiceSpec {
     // Call to get existing employee by ID
     coEvery {
       service.employeeRepository.findById(existingId)
-    } returns Optional.of(existing)
+    } returns existing
     // Save call to repo
     coEvery {
       service.employeeRepository.save(any<Employee>())
@@ -137,7 +138,7 @@ internal class EmployeeServiceSpec {
       service.employeeRepository.findById(existingId)
       service.employeeRepository.save(
         withArg { employee: Employee ->
-          employee.name shouldBe employeeUpdate.name
+          employee.employeeName shouldBe employeeUpdate.name
           employee.employeeId shouldBe employeeUpdate.employeeId
           employee.created shouldNotBe null
         }
@@ -173,7 +174,7 @@ internal class EmployeeServiceSpec {
       service.ssnClient.getSocialSecurity("e1")
     }
 
-    actual.content[0].name shouldBe expected[0].name
+    actual.content[0].employeeName shouldBe expected[0].employeeName
     actual.content[0].employeeId shouldBe expected[0].employeeId
     actual.content[0].socialSecurityNumber shouldBe socialSecurityInfo.socialSecurityNumber
   }
@@ -188,7 +189,7 @@ internal class EmployeeServiceSpec {
     // list call to repo
     coEvery {
       service.employeeRepository.findById(id)
-    } returns Optional.of(expected)
+    } returns expected
     coEvery {
       service.ssnClient.getSocialSecurity("e1")
     } returns socialSecurityInfo
@@ -202,7 +203,7 @@ internal class EmployeeServiceSpec {
       service.ssnClient.getSocialSecurity("e1")
     }
 
-    actual?.name shouldBe expected.name
+    actual?.employeeName shouldBe expected.employeeName
     actual?.employeeId shouldBe expected.employeeId
     actual?.socialSecurityNumber shouldBe socialSecurityInfo.socialSecurityNumber
   }
@@ -211,10 +212,13 @@ internal class EmployeeServiceSpec {
   fun `delete employee`() {
     // given:
     val id = "id1"
+    val expected = getTestEmployee("Joe", "e1")
 
-    // list call to repo
     coEvery {
-      service.employeeRepository.deleteById(id)
+      service.employeeRepository.findById(id)
+    } returns expected
+    coEvery {
+      service.employeeRepository.delete(expected)
     } just Runs
 
     // when:
@@ -222,7 +226,8 @@ internal class EmployeeServiceSpec {
 
     // then:
     coVerifyAll {
-      service.employeeRepository.deleteById(id)
+      service.employeeRepository.findById(id)
+      service.employeeRepository.delete(expected)
     }
   }
 }
