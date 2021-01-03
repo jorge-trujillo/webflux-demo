@@ -23,3 +23,4 @@ Github will run your tests easily as an action as part of every PR. You should b
 - Added Kafka consumer and producer
 - Added configuration to retry messages in case of failure when processing a message
     - _Note_: You should retry messages if the failure is due to your infra (i..e the database is down) but send messages to a dead-letter queue if failure is due to bad data.
+- Now use docker-compose directly in Github actions! This makes it even more seamless.
