@@ -12,6 +12,15 @@ spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
 
+kafka:
+  bootstrap_address: localhost:9092
+  producer:
+    enabled: false
+  consumer:
+    enabled: false
+    group_id: demo-1
+    auto_offset_reset: earliest
+
 server:
   port: 8080
 

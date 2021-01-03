@@ -5,6 +5,7 @@ import com.jorgetrujillo.webfluxdemo.domain.Employee
 import com.jorgetrujillo.webfluxdemo.domain.EmployeeUpdate
 import com.jorgetrujillo.webfluxdemo.exceptions.ResourceConflictException
 import com.jorgetrujillo.webfluxdemo.exceptions.ResourceDoesNotExistException
+import com.jorgetrujillo.webfluxdemo.kafka.EmployeePublisher
 import com.jorgetrujillo.webfluxdemo.repositories.EmployeeRepository
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -15,7 +16,8 @@ import org.springframework.stereotype.Service
 @Service
 class EmployeeService(
   val employeeRepository: EmployeeRepository,
-  val ssnClient: SocialSecurityServiceClient
+  val ssnClient: SocialSecurityServiceClient,
+  val employeePublisher: EmployeePublisher
 ) {
 
   suspend fun save(employeeId: String? = null, employeeUpdate: EmployeeUpdate): Employee = coroutineScope {
@@ -37,7 +39,9 @@ class EmployeeService(
       )
     }
 
-    employeeRepository.save(employeeToSave)
+    val savedEmployee = employeeRepository.save(employeeToSave)
+    employeePublisher.sendMessage(employeeToSave.employeeId!!, savedEmployee)
+    savedEmployee
   }
 
   suspend fun list(name: String, pageable: Pageable): Page<Employee> = coroutineScope {

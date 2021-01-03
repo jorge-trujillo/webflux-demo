@@ -14,12 +14,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Setup DynamoDB Local
-        uses: rrainn/dynamodb-action@v2.0.0
-        with:
-          sharedDb: true
-          port: 8000
-          cors: '*'
+      - name: Set up dependencies with compose
+        run: docker-compose -f src/test/resources/compose/compose-test.yml up -d && sleep 10
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Run tests
