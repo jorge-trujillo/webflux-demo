@@ -2,6 +2,7 @@ package com.jorgetrujillo.webfluxdemo.controllers
 
 import com.jorgetrujillo.webfluxdemo.TestBase
 import com.jorgetrujillo.webfluxdemo.domain.EmployeeUpdate
+import com.jorgetrujillo.webfluxdemo.kafka.EmployeeConsumer
 import com.jorgetrujillo.webfluxdemo.repositories.EmployeeRepository
 import com.jorgetrujillo.webfluxdemo.testclients.EmployeeClient
 import com.jorgetrujillo.webfluxdemo.utils.TestUtils
@@ -27,6 +28,9 @@ class EmployeeControllerFunctionalSpec : TestBase() {
   lateinit var repository: EmployeeRepository
 
   @Autowired
+  lateinit var employeeConsumer: EmployeeConsumer
+
+  @Autowired
   lateinit var webClient: EmployeeClient
 
   @BeforeEach
@@ -38,6 +42,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
   @AfterEach
   fun cleanup() {
     repository.deleteAll()
+    employeeConsumer.messagesReceived.clear()
   }
 
   @Test
@@ -146,6 +151,17 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     // and: Employee was saved to repo
     val savedEmployee = runBlocking { repository.findById(response.body?.employeeId!!) }
     savedEmployee?.employeeId shouldBe employeeUpdate.employeeId
+
+    // and: Employee was published to kafka
+    (1..20).find {
+      if (employeeConsumer.messagesReceived.find { it?.employeeId == employeeUpdate.employeeId } != null) {
+        return@find true
+      }
+      Thread.sleep(100)
+      return@find false
+    }
+    val publishedEmployee = employeeConsumer.messagesReceived.find { it?.employeeId == employeeUpdate.employeeId }
+    publishedEmployee?.employeeName shouldBe employeeUpdate.name
   }
 
   @Test
@@ -168,6 +184,17 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     // and: Employee was saved to repo
     val savedEmployee = runBlocking { repository.findById(response.body?.employeeId!!) }
     savedEmployee?.employeeName shouldBe employeeUpdate.name
+
+    // and: Employee update was published to kafka
+    (1..20).find {
+      if (employeeConsumer.messagesReceived.find { it?.employeeId == employeeUpdate.employeeId } != null) {
+        return@find true
+      }
+      Thread.sleep(100)
+      return@find false
+    }
+    val publishedEmployee = employeeConsumer.messagesReceived.find { it?.employeeId == employeeUpdate.employeeId }
+    publishedEmployee?.employeeName shouldBe employeeUpdate.name
   }
 
   @Test

@@ -7,3 +7,11 @@ tests:
   mock_server:
     host: http://localhost
     port: 1080
+
+kafka:
+  bootstrap_address: localhost:9092
+  publisher:
+    enabled: true
+  consumer:
+    group_id: test-consumer-1
+    enabled: true

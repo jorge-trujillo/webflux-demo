@@ -5,6 +5,7 @@ import com.jorgetrujillo.webfluxdemo.clients.domain.SocialSecurityInfo
 import com.jorgetrujillo.webfluxdemo.domain.Employee
 import com.jorgetrujillo.webfluxdemo.domain.EmployeeUpdate
 import com.jorgetrujillo.webfluxdemo.exceptions.ResourceConflictException
+import com.jorgetrujillo.webfluxdemo.kafka.EmployeePublisher
 import com.jorgetrujillo.webfluxdemo.repositories.EmployeeRepository
 import com.jorgetrujillo.webfluxdemo.utils.TestUtils.Companion.getTestEmployee
 import io.kotest.assertions.throwables.shouldThrow
@@ -27,7 +28,8 @@ internal class EmployeeServiceSpec {
 
   val service = EmployeeService(
     mockk<EmployeeRepository>(),
-    mockk<SocialSecurityServiceClient>()
+    mockk<SocialSecurityServiceClient>(),
+    mockk<EmployeePublisher>()
   )
 
   @BeforeEach
@@ -53,6 +55,10 @@ internal class EmployeeServiceSpec {
     coEvery {
       service.employeeRepository.save(any<Employee>())
     } returns expected
+    // Publish to topic
+    coEvery {
+      service.employeePublisher.sendMessage("e1", any<Employee>())
+    } just Runs
 
     // when:
     val actual = runBlocking { service.save(null, employeeUpdate) }
@@ -67,6 +73,7 @@ internal class EmployeeServiceSpec {
           employee.created shouldBe null
         }
       )
+      service.employeePublisher.sendMessage("e1", any<Employee>())
     }
 
     actual shouldBe expected
@@ -129,6 +136,10 @@ internal class EmployeeServiceSpec {
     coEvery {
       service.employeeRepository.save(any<Employee>())
     } returns expected
+    // Publish to topic
+    coEvery {
+      service.employeePublisher.sendMessage("e1", any<Employee>())
+    } just Runs
 
     // when:
     val actual = runBlocking { service.save(existingId, employeeUpdate) }
@@ -141,6 +152,12 @@ internal class EmployeeServiceSpec {
           employee.employeeName shouldBe employeeUpdate.name
           employee.employeeId shouldBe employeeUpdate.employeeId
           employee.created shouldNotBe null
+        }
+      )
+      service.employeePublisher.sendMessage(
+        "e1",
+        withArg { employee: Employee ->
+          employee.employeeName shouldBe employeeUpdate.name
         }
       )
     }
