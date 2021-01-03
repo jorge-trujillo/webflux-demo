@@ -15,7 +15,7 @@ jobs:
         with:
           java-version: 11
       - name: Set up dependencies with compose
-        run: docker-compose -f src/test/resources/compose-test.yml up -d && sleep 10
+        run: docker-compose -f src/test/resources/compose/compose-test.yml up -d && sleep 10
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Run tests
