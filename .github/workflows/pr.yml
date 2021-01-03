@@ -16,11 +16,7 @@ jobs:
           java-version: 11
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Where is docker
-        run: whereis docker-compose
-      - name: Which is docker
-        run: which docker-compose
       - name: Run tests
         env:
           GRADLE_OPTS: -Dorg.gradle.daemon=false
-        run: ./gradlew clean build
+        run: ./gradlew -Ddocker.path=/usr/local/bin clean build

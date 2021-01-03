@@ -94,7 +94,7 @@ dependencies {
   compile "org.springframework.boot:spring-boot-starter-webflux:${springBootVersion}"
   compile "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
   compile "org.springframework.kafka:spring-kafka:${springKafkaVersion}"
-  
+
   //compile "org.springframework.data:spring-data:${springVersion}"
   compile "org.springframework.data:spring-data-commons:${springBootVersion}"
   compile "com.amazonaws:aws-java-sdk-dynamodb:${dynamoDbVersion}"
@@ -180,8 +180,14 @@ task unix {
   } else {
     dockerPath = '/usr/bin'
   }
+
+  // Check parameters for override
+  if (System.properties["docker.path"] != null) {
+    dockerPath = System.properties["docker.path"]
+  }
   println "Setting docker base path to ${dockerPath}"
 }
+
 composeUp.dependsOn(unix)
 composeDown.dependsOn(unix)
 composePull.dependsOn(unix)
