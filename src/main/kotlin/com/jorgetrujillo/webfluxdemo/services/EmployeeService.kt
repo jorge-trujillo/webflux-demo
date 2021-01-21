@@ -35,7 +35,7 @@ class EmployeeService(
 
       existingEmployee.copy(
         employeeId = employeeId,
-        employeeName = employeeUpdate.name
+        employeeName = employeeUpdate.employeeName
       )
     }
 

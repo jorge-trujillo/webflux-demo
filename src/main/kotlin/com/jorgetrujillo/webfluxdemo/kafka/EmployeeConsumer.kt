@@ -1,6 +1,8 @@
 package com.jorgetrujillo.webfluxdemo.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.jorgetrujillo.webfluxdemo.config.KafkaConfig
+import com.jorgetrujillo.webfluxdemo.config.KafkaTopic
 import com.jorgetrujillo.webfluxdemo.domain.Employee
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -16,17 +18,18 @@ import java.util.Collections
 @Service
 class EmployeeConsumer(
   @Qualifier("primaryMapper")
-  val objectMapper: ObjectMapper
+  val objectMapper: ObjectMapper,
+  val kafkaConfig: KafkaConfig
 ) {
 
   val messagesReceived: MutableList<Employee?> = Collections.synchronizedList(mutableListOf())
+  val topicName = kafkaConfig.consumer.topics[KafkaTopic.EMPLOYEES.value]
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
-    const val TOPIC_NAME = "test.employee-updates.v1"
   }
 
-  @KafkaListener(topics = [TOPIC_NAME])
+  @KafkaListener(topics = ["#{kafkaConfig.consumer.topics['employees']}"])
   fun listenWithHeaders(
     @Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) key: String,
     @Header(KafkaHeaders.RECEIVED_PARTITION_ID) partition: Int,
@@ -34,7 +37,7 @@ class EmployeeConsumer(
     @Payload message: String?,
     acknowledgment: Acknowledgment
   ) {
-    log.info("Received message for topic $TOPIC_NAME with key $key on partition $partition:$offset")
+    log.info("Received message for topic $topicName} with key $key on partition $partition:$offset")
 
     // Try to deserialize
     val employee: Employee?
@@ -45,7 +48,7 @@ class EmployeeConsumer(
         null
       }
     } catch (e: Exception) {
-      log.error("Could not read message $key on topic $TOPIC_NAME on partition $partition:$offset", e)
+      log.error("Could not read message $key on topic $topicName on partition $partition:$offset", e)
       // There was an error deserializing here.
       // We should send this message to a dead letter queue or table and maybe send an alert
       return

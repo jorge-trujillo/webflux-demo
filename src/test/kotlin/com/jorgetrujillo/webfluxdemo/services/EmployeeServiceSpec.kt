@@ -68,7 +68,7 @@ internal class EmployeeServiceSpec {
       service.employeeRepository.findById("e1")
       service.employeeRepository.save(
         withArg { employee: Employee ->
-          employee.employeeName shouldBe employeeUpdate.name
+          employee.employeeName shouldBe employeeUpdate.employeeName
           employee.employeeId shouldBe employeeUpdate.employeeId
           employee.created shouldBe null
         }
@@ -149,7 +149,7 @@ internal class EmployeeServiceSpec {
       service.employeeRepository.findById(existingId)
       service.employeeRepository.save(
         withArg { employee: Employee ->
-          employee.employeeName shouldBe employeeUpdate.name
+          employee.employeeName shouldBe employeeUpdate.employeeName
           employee.employeeId shouldBe employeeUpdate.employeeId
           employee.created shouldNotBe null
         }
@@ -157,7 +157,7 @@ internal class EmployeeServiceSpec {
       service.employeePublisher.sendMessage(
         "e1",
         withArg { employee: Employee ->
-          employee.employeeName shouldBe employeeUpdate.name
+          employee.employeeName shouldBe employeeUpdate.employeeName
         }
       )
     }

@@ -1,0 +1,18 @@
+kafka:
+  bootstrap_address: kafka-east-1:9093
+  security:
+    enabled: true
+    truststore_location: /Users/jtrujillo/git/jtrujillo/kafka-test/ssl/certs/kafka.truststore.jks
+    truststore_password: changeme
+    username: com.chewy.cse.client
+    password: kafkapassword
+  publisher:
+    enabled: true
+    topics:
+      employees: test.employee-updates.v1
+  consumer:
+    enabled: true
+    group_id: test-consumer-1
+    auto_offset_reset: earliest
+    topics:
+      employees: test.employee-updates.v1
