@@ -1,4 +1,3 @@
-
 feign:
   app:
     url: http://localhost:8080
@@ -10,6 +9,8 @@ tests:
 
 kafka:
   bootstrap_address: localhost:9092
+  security:
+    enabled: false
   publisher:
     enabled: true
   consumer:

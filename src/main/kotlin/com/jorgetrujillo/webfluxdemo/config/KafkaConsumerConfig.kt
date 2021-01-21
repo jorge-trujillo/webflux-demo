@@ -2,7 +2,7 @@ package com.jorgetrujillo.webfluxdemo.config
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.annotation.EnableKafka
@@ -18,35 +18,28 @@ import java.util.HashMap
 @Configuration
 class KafkaConsumerConfig {
 
-  @Value("\${kafka.bootstrap_address}")
-  lateinit var bootstrapAddress: String
-
-  @Value("\${kafka.consumer.enabled}")
-  val enabled: Boolean? = null
-
-  @Value("\${kafka.consumer.group_id}")
-  lateinit var groupId: String
-
-  @Value("\${kafka.consumer.auto_offset_reset}")
-  lateinit var autoOffsetReset: String
+  @Autowired
+  lateinit var kafkaConfig: KafkaConfig
 
   @Bean
   fun consumerFactory(): ConsumerFactory<String, String?>? {
 
-    if (enabled != true) {
+    if (!kafkaConfig.consumer.enabled) {
       return null
     }
 
     val props: MutableMap<String, Any> = HashMap()
-    props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapAddress
-    props[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-    props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = autoOffsetReset
-
+    props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaConfig.bootstrapAddress
+    props[ConsumerConfig.GROUP_ID_CONFIG] = kafkaConfig.consumer.groupId
+    props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = kafkaConfig.consumer.autoOffsetReset
     props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
     props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
 
     // Do not acknowledge automatically
     props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
+
+    // Security settings
+    props.putAll(kafkaConfig.getSecurityProperties())
 
     return DefaultKafkaConsumerFactory(props)
   }
@@ -56,7 +49,7 @@ class KafkaConsumerConfig {
     kafkaConsumerFactory: ConsumerFactory<String, String?>?
   ): ConcurrentKafkaListenerContainerFactory<String, String?>? {
 
-    if (enabled != true) {
+    if (!kafkaConfig.consumer.enabled) {
       return null
     }
 

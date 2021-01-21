@@ -62,5 +62,5 @@ data class Employee(
     this(employeeId, name, Instant.now(), Instant.now(), Instant.now())
 
   constructor(employeeUpdate: EmployeeUpdate) :
-    this(employeeUpdate.employeeId, employeeUpdate.name, Instant.now())
+    this(employeeUpdate.employeeId, employeeUpdate.employeeName, Instant.now())
 }

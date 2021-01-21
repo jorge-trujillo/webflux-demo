@@ -161,7 +161,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
       return@find false
     }
     val publishedEmployee = employeeConsumer.messagesReceived.find { it?.employeeId == employeeUpdate.employeeId }
-    publishedEmployee?.employeeName shouldBe employeeUpdate.name
+    publishedEmployee?.employeeName shouldBe employeeUpdate.employeeName
   }
 
   @Test
@@ -179,11 +179,11 @@ class EmployeeControllerFunctionalSpec : TestBase() {
     // then:
     response.statusCode shouldBe HttpStatus.OK
     response.body?.employeeId shouldBe employeeUpdate.employeeId
-    response.body?.employeeName shouldBe employeeUpdate.name
+    response.body?.employeeName shouldBe employeeUpdate.employeeName
 
     // and: Employee was saved to repo
     val savedEmployee = runBlocking { repository.findById(response.body?.employeeId!!) }
-    savedEmployee?.employeeName shouldBe employeeUpdate.name
+    savedEmployee?.employeeName shouldBe employeeUpdate.employeeName
 
     // and: Employee update was published to kafka
     (1..20).find {
@@ -194,7 +194,7 @@ class EmployeeControllerFunctionalSpec : TestBase() {
       return@find false
     }
     val publishedEmployee = employeeConsumer.messagesReceived.find { it?.employeeId == employeeUpdate.employeeId }
-    publishedEmployee?.employeeName shouldBe employeeUpdate.name
+    publishedEmployee?.employeeName shouldBe employeeUpdate.employeeName
   }
 
   @Test

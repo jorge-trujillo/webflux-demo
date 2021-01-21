@@ -1,3 +1,16 @@
+management:
+  endpoints:
+    web:
+      base-path: /
+      path-mapping:
+        health: health
+      exposure:
+        include:
+          - info
+          - health
+  endpoint:
+    health:
+      show-details: always
 
 # DynamoDB config
 amazon:
@@ -14,12 +27,18 @@ spring:
 
 kafka:
   bootstrap_address: localhost:9092
+  security:
+    enabled: false
   producer:
     enabled: false
+    topics:
+      employees: test.employee-updates.v1
   consumer:
     enabled: false
     group_id: demo-1
     auto_offset_reset: earliest
+    topics:
+      employees: test.employee-updates.v1
 
 server:
   port: 8080

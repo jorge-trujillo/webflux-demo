@@ -1,6 +1,6 @@
 package com.jorgetrujillo.webfluxdemo.domain
 
 data class EmployeeUpdate(
-  val name: String,
+  val employeeName: String,
   val employeeId: String,
 )

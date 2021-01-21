@@ -1,6 +1,8 @@
 package com.jorgetrujillo.webfluxdemo.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.jorgetrujillo.webfluxdemo.config.KafkaConfig
+import com.jorgetrujillo.webfluxdemo.config.KafkaTopic
 import com.jorgetrujillo.webfluxdemo.domain.Employee
 import kotlinx.coroutines.coroutineScope
 import org.slf4j.Logger
@@ -13,8 +15,11 @@ import org.springframework.stereotype.Service
 class EmployeePublisher(
   val kafkaTemplate: KafkaTemplate<String, String>?,
   @Qualifier("primaryMapper")
-  val objectMapper: ObjectMapper
+  val objectMapper: ObjectMapper,
+  val kafkaConfig: KafkaConfig
 ) {
+
+  val topicName = kafkaConfig.consumer.topics[KafkaTopic.EMPLOYEES.value]
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -26,9 +31,9 @@ class EmployeePublisher(
       return@coroutineScope
     }
 
-    val sendResult = kafkaTemplate!!.send(EmployeeConsumer.TOPIC_NAME, key, objectMapper.writeValueAsString(msg)).get()
+    val sendResult = kafkaTemplate!!.send(topicName!!, key, objectMapper.writeValueAsString(msg)).get()
     log.info(
-      "Publishing message with key $key to topic ${EmployeeConsumer.TOPIC_NAME} on " +
+      "Publishing message with key $key to topic $topicName on " +
         "${sendResult.recordMetadata.partition()}:${sendResult.recordMetadata.offset()}"
     )
   }
